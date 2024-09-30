@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app.py",               // Nome do seu arquivo principal
+      "use": "@vercel/python"        // Usando o builder para Python
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",                // Rota que irá capturar todas as requisições
+      "dest": "app.py"               // Redireciona para o seu arquivo principal
+    }
+  ]
+}
