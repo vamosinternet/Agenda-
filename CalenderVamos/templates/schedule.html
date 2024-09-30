@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar Reunião</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Agendar Reunião</h1>
+        <form action="/schedule" method="POST">
+            <div class="mb-3">
+                <label for="title">Título da Reunião:</label>
+                <input type="text" id="title" name="title" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="start">Data e Hora de Início:</label>
+                <input type="datetime-local" id="start" name="start" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="end">Data e Hora de Término:</label>
+                <input type="datetime-local" id="end" name="end" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="email">E-mail do Participante:</label>
+                <input type="email" id="email" name="email" class="form-control" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Agendar Reunião</button>
+        </form>
+        <a href="/" class="btn btn-secondary">Voltar</a>
+    </div>
+</body>
+</html>

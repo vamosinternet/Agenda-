@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendário de Reuniões</title>
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css' rel='stylesheet' />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --primary-hover-color: #357ae8;
+            --background-color: #f9f9f9;
+            --border-color: #e0e0e0;
+            --text-color: #333;
+            --button-text-color: #fff;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            padding: 20px;
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+
+        #calendar {
+            background-color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .fc-toolbar {
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px;
+        }
+
+        .fc-button {
+            background-color: var(--primary-color);
+            border: none;
+            color: var(--button-text-color);
+            border-radius: 5px;
+            transition: background-color 0.3s, transform 0.1s;
+            padding: 8px 12px;
+            font-weight: 500;
+        }
+
+        .fc-button:hover {
+            background-color: var(--primary-hover-color);
+            transform: translateY(-1px);
+        }
+
+        .fc-button:active {
+            transform: translateY(1px);
+        }
+
+        .modal-content {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            background-color: var(--primary-color);
+            color: var(--button-text-color);
+            border-bottom: none;
+        }
+
+        .modal-title {
+            font-weight: 600;
+        }
+
+        .form-control {
+            border-radius: 5px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(66, 133, 244, 0.25);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover-color);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(1px);
+        }
+
+        #toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #333;
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 5px;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Calendário de Reuniões</h1>
+        <div id="calendar" class="mb-4"></div>
+    </div>
+
+    <!-- Modal para agendar reunião -->
+    <div class="modal fade" id="meetingModal" tabindex="-1" aria-labelledby="meetingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="meetingModalLabel">Agendar Nova Reunião</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="meetingForm">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título da Reunião</label>
+                            <input type="text" id="title" class="form-control" placeholder="Título da reunião" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="start" class="form-label">Data e Hora de Início</label>
+                            <input type="datetime-local" id="start" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="end" class="form-label">Data e Hora de Término</label>
+                            <input type="datetime-local" id="end" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">E-mail do Participante</label>
+                            <input type="email" id="email" class="form-control" placeholder="Email" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Agendar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('calendar');
+            const meetingForm = document.getElementById('meetingForm');
+            const toast = document.getElementById('toast');
+
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                locale: 'pt-br',
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                buttonText: {
+                    today: 'Hoje',
+                    month: 'Mês',
+                    week: 'Semana',
+                    day: 'Dia'
+                },
+                editable: true,
+                selectable: true,
+                dateClick: handleDateClick,
+                eventClick: handleEventClick,
+                eventDrop: handleEventDrop,
+                eventResize: handleEventResize,
+                events: fetchEvents
+            });
+
+            calendar.render();
+
+            function handleDateClick(info) {
+                const startDate = info.date;
+                const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hour later
+                document.getElementById('start').value = formatDateTime(startDate);
+                document.getElementById('end').value = formatDateTime(endDate);
+                const modal = new bootstrap.Modal(document.getElementById('meetingModal'));
+                modal.show();
+            }
+
+            function handleEventClick(info) {
+                showToast(`Reunião: ${info.event.title}`);
+            }
+
+            function handleEventDrop(info) {
+                showToast(`Reunião movida para: ${formatDateTime(info.event.start)}`);
+                updateEvent(info.event);
+            }
+
+            function handleEventResize(info) {
+                showToast(`Reunião redimensionada para: ${formatDateTime(info.event.end)}`);
+                updateEvent(info.event);
+            }
+
+            function fetchEvents(fetchInfo, successCallback, failureCallback) {
+                axios.get('/api/meetings')
+                    .then(function(response) {
+                        successCallback(response.data);
+                    })
+                    .catch(function(error) {
+                        console.error('Erro ao carregar as reuniões:', error);
+                        showToast('Erro ao carregar as reuniões. Tente novamente.', 'error');
+                        failureCallback(error);
+                    });
+            }
+
+            function updateEvent(event) {
+                axios.put(`/api/meetings/${event.id}`, {
+                    start: event.start,
+                    end: event.end
+                })
+                .catch(function(error) {
+                    console.error('Erro ao atualizar a reunião:', error);
+                    showToast('Erro ao atualizar a reunião. Tente novamente.', 'error');
+                    calendar.refetchEvents();
+                });
+            }
+
+            meetingForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const title = document.getElementById('title').value;
+                const start = document.getElementById('start').value;
+                const end = document.getElementById('end').value;
+                const email = document.getElementById('email').value;
+
+                axios.post('/api/meetings', {
+                    title: title,
+                    start: start,
+                    end: end,
+                    email: email
+                })
+                .then(function(response) {
+                    showToast('Reunião agendada com sucesso!', 'success');
+                    calendar.refetchEvents();
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('meetingModal'));
+                    modal.hide();
+                    meetingForm.reset();
+                })
+                .catch(function(error) {
+                    console.error('Erro ao agendar reunião:', error);
+                    showToast('Ocorreu um erro ao agendar a reunião. Tente novamente.', 'error');
+                });
+            });
+
+            function formatDateTime(date) {
+                return date.toISOString().slice(0, 16);
+            }
+
+            function showToast(message, type = 'info') {
+                toast.textContent = message;
+                toast.style.display = 'block';
+                toast.style.backgroundColor = type === 'error' ? '#dc3545' : '#28a745';
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 3000);
+            }
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
