@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
+     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendário de Reuniões</title>
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css' rel='stylesheet' />
@@ -256,16 +256,16 @@
                     end: end,
                     email: email
                 })
-                .then(function(response) {
-                    showToast('Reunião agendada com sucesso!', 'success');
-                    calendar.refetchEvents();
+                .then(function() {
+                    showToast('Reunião agendada com sucesso!');
+                    meetingForm.reset();
                     const modal = bootstrap.Modal.getInstance(document.getElementById('meetingModal'));
                     modal.hide();
-                    meetingForm.reset();
+                    calendar.refetchEvents();
                 })
                 .catch(function(error) {
                     console.error('Erro ao agendar reunião:', error);
-                    showToast('Ocorreu um erro ao agendar a reunião. Tente novamente.', 'error');
+                    showToast('Erro ao agendar a reunião. Tente novamente.', 'error');
                 });
             });
 
@@ -273,17 +273,17 @@
                 return date.toISOString().slice(0, 16);
             }
 
-            function showToast(message, type = 'info') {
+            function showToast(message, type = 'success') {
                 toast.textContent = message;
                 toast.style.display = 'block';
-                toast.style.backgroundColor = type === 'error' ? '#dc3545' : '#28a745';
-                setTimeout(() => {
+                toast.style.backgroundColor = type === 'success' ? '#28a745' : '#dc3545';
+
+                setTimeout(function() {
                     toast.style.display = 'none';
                 }, 3000);
             }
         });
     </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script> <!-- Adiciona o script correto do Bootstrap -->
 </body>
 </html>
